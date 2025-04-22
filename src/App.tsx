@@ -9,6 +9,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import TasksPage from "./pages/TasksPage";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,7 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/command-center" element={<PlaceholderPage />} />
           <Route path="/focus" element={<PlaceholderPage />} />
-          <Route path="/tasks" element={<PlaceholderPage />} />
+          <Route path="/tasks" element={<TasksPage />} />
           <Route path="/calendar" element={<PlaceholderPage />} />
           <Route path="/time-tracking" element={<PlaceholderPage />} />
           <Route path="/habits" element={<PlaceholderPage />} />

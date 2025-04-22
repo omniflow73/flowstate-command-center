@@ -5,6 +5,7 @@ import { Clock, Flag, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 type Task = {
   id: string;
@@ -46,15 +47,17 @@ export default function TaskCard() {
   };
 
   const addNewTask = () => {
-    toast.info("Add new task functionality would open a form here");
+    toast.info("Redirecting to Tasks page");
   };
 
   return (
     <Card className="glass-card">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle>Today's Tasks</CardTitle>
-        <Button variant="ghost" size="sm" onClick={addNewTask}>
-          <Plus size={16} />
+        <Button variant="ghost" size="sm" onClick={addNewTask} asChild>
+          <Link to="/tasks">
+            <Plus size={16} />
+          </Link>
         </Button>
       </CardHeader>
       <CardContent>
