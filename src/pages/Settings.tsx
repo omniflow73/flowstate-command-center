@@ -9,11 +9,23 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Settings() {
-  const handleToggle = (setting: string) => {
-    toast.success(`${setting} setting updated`);
+  const [settings, setSettings] = useState({
+    emailNotifications: false,
+    pushNotifications: false,
+    compactMode: false,
+    showActivity: false,
+  });
+
+  const handleToggle = (setting: keyof typeof settings) => {
+    setSettings(prev => {
+      const newSettings = { ...prev, [setting]: !prev[setting] };
+      toast.success(`${setting} setting updated`);
+      return newSettings;
+    });
   };
 
   return (
@@ -38,14 +50,16 @@ export default function Settings() {
               <Label htmlFor="email-notifications">Email Notifications</Label>
               <Switch
                 id="email-notifications"
-                onCheckedChange={() => handleToggle("Email notifications")}
+                checked={settings.emailNotifications}
+                onCheckedChange={() => handleToggle('emailNotifications')}
               />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="push-notifications">Push Notifications</Label>
               <Switch
                 id="push-notifications"
-                onCheckedChange={() => handleToggle("Push notifications")}
+                checked={settings.pushNotifications}
+                onCheckedChange={() => handleToggle('pushNotifications')}
               />
             </div>
           </CardContent>
@@ -63,7 +77,8 @@ export default function Settings() {
               <Label htmlFor="compact-mode">Compact Mode</Label>
               <Switch
                 id="compact-mode"
-                onCheckedChange={() => handleToggle("Compact mode")}
+                checked={settings.compactMode}
+                onCheckedChange={() => handleToggle('compactMode')}
               />
             </div>
           </CardContent>
@@ -81,7 +96,8 @@ export default function Settings() {
               <Label htmlFor="activity-status">Show Activity Status</Label>
               <Switch
                 id="activity-status"
-                onCheckedChange={() => handleToggle("Activity status")}
+                checked={settings.showActivity}
+                onCheckedChange={() => handleToggle('showActivity')}
               />
             </div>
           </CardContent>

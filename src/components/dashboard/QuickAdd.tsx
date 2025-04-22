@@ -7,8 +7,14 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 export default function QuickAdd() {
+  const handleQuickAdd = (type: string) => {
+    toast.info(`Creating new ${type}...`);
+    // Here you would typically open a modal or navigate to the creation form
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -18,11 +24,36 @@ export default function QuickAdd() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem className="cursor-pointer">New Task</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">New Event</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">New Note</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">New Project</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">New Habit</DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleQuickAdd("task")}
+          className="cursor-pointer"
+        >
+          New Task
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleQuickAdd("event")}
+          className="cursor-pointer"
+        >
+          New Event
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleQuickAdd("note")}
+          className="cursor-pointer"
+        >
+          New Note
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleQuickAdd("project")}
+          className="cursor-pointer"
+        >
+          New Project
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleQuickAdd("habit")}
+          className="cursor-pointer"
+        >
+          New Habit
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

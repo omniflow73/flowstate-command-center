@@ -1,7 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CheckCheck, CheckCircle, CheckCircle2, Circle } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type Habit = {
   id: string;
@@ -12,7 +13,7 @@ type Habit = {
 };
 
 export default function HabitTrackerCard() {
-  const habits: Habit[] = [
+  const [habits, setHabits] = useState<Habit[]>([
     {
       id: "1",
       name: "Meditation",
@@ -46,7 +47,33 @@ export default function HabitTrackerCard() {
         return date.toISOString().split('T')[0];
       }),
     },
-  ];
+  ]);
+
+  const toggleHabit = (habitId: string) => {
+    setHabits(prevHabits => {
+      return prevHabits.map(habit => {
+        if (habit.id === habitId) {
+          const wasCompleted = habit.completedToday;
+          const newStreak = wasCompleted ? habit.streak - 1 : habit.streak + 1;
+          const today = new Date().toISOString().split('T')[0];
+          
+          const newDates = wasCompleted
+            ? habit.completedDates.filter(date => date !== today)
+            : [...habit.completedDates, today];
+
+          toast.success(`${habit.name} marked as ${wasCompleted ? 'incomplete' : 'complete'}`);
+          
+          return {
+            ...habit,
+            completedToday: !wasCompleted,
+            streak: newStreak,
+            completedDates: newDates,
+          };
+        }
+        return habit;
+      });
+    });
+  };
 
   // Generate last 7 days for the habit calendar
   const lastSevenDays = Array.from({ length: 7 }, (_, i) => {
@@ -69,14 +96,17 @@ export default function HabitTrackerCard() {
           {habits.map((habit) => (
             <div key={habit.id} className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => toggleHabit(habit.id)}
+                  className="flex items-center gap-2 hover:opacity-80"
+                >
                   {habit.completedToday ? (
                     <CheckCircle className="h-5 w-5 text-primary" />
                   ) : (
                     <Circle className="h-5 w-5 text-muted-foreground" />
                   )}
                   <span>{habit.name}</span>
-                </div>
+                </button>
                 <div className="flex items-center gap-1.5 text-sm">
                   <CheckCheck className="h-4 w-4" />
                   <span>{habit.streak} day streak</span>
@@ -88,7 +118,9 @@ export default function HabitTrackerCard() {
                   const isCompleted = habit.completedDates.includes(day.dateString);
                   return (
                     <div key={index} className="flex flex-col items-center">
-                      <span className="text-xs text-muted-foreground">{day.dayName.charAt(0)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {day.dayName.charAt(0)}
+                      </span>
                       <div className={`h-6 w-6 flex items-center justify-center rounded-full ${
                         isCompleted ? "bg-primary text-primary-foreground" : "bg-muted"
                       }`}>

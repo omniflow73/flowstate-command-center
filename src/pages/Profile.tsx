@@ -3,16 +3,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UserCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Profile() {
   const [username, setUsername] = useState("User");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarUrl(e.target?.result as string);
+        toast.success("Avatar updated successfully!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
-    // For now, just show a success message. Later this would connect to backend
+    if (username.trim().length < 3) {
+      toast.error("Username must be at least 3 characters long");
+      return;
+    }
     toast.success("Profile updated successfully!");
   };
 
@@ -33,7 +49,18 @@ export default function Profile() {
               <UserCircle className="h-20 w-20" />
             </AvatarFallback>
           </Avatar>
-          <Button variant="outline" className="w-full max-w-xs">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+          <Button 
+            variant="outline" 
+            className="w-full max-w-xs"
+            onClick={() => fileInputRef.current?.click()}
+          >
             Change Avatar
           </Button>
         </div>
