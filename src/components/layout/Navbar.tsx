@@ -1,9 +1,17 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { Bell, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type NavbarProps = {
   toggleSidebar: () => void;
@@ -18,7 +26,9 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
           <span className="sr-only">Toggle sidebar</span>
         </Button>
         <div className="hidden md:flex items-center ml-4">
-          <h1 className="text-xl font-semibold text-gradient">FlowState</h1>
+          <Link to="/" className="text-xl font-semibold text-gradient">
+            FlowState
+          </Link>
         </div>
       </div>
       
@@ -40,10 +50,28 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
           <span className="sr-only">Notifications</span>
         </Button>
         <ThemeToggle />
-        <Avatar className="h-9 w-9">
-          <AvatarImage src="" alt="User" />
-          <AvatarFallback>US</AvatarFallback>
-        </Avatar>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src="" alt="User" />
+                <AvatarFallback>US</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild>
+              <Link to="/profile">Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/settings">Settings</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
