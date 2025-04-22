@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 export default function PomodoroCard() {
   const [timer, setTimer] = useState(25 * 60); // 25 minutes in seconds
@@ -24,6 +25,7 @@ export default function PomodoroCard() {
       }, 1000);
     } else if (timer === 0) {
       setIsActive(false);
+      toast.success("Pomodoro session completed!");
       // Play notification sound or show notification in a real app
     }
 
@@ -38,12 +40,14 @@ export default function PomodoroCard() {
 
   const toggleTimer = () => {
     setIsActive(!isActive);
+    toast.info(isActive ? "Timer paused" : "Timer started");
   };
 
   const resetTimer = () => {
     setIsActive(false);
     setTimer(25 * 60);
     setProgress(100);
+    toast.info("Timer reset");
   };
 
   return (

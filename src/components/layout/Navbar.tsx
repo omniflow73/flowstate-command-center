@@ -1,7 +1,7 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
-import { Bell, Menu, Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, Menu, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,12 +12,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 type NavbarProps = {
   toggleSidebar: () => void;
 };
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = React.useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      toast.info(`Searching for: ${searchQuery}`);
+      // In a real app, this would perform a search
+    }
+  };
+
+  const handleNotifications = () => {
+    toast.info("Notifications clicked");
+  };
+
+  const handleLogout = () => {
+    toast.success("Successfully logged out");
+    // In a real app, this would perform a logout action
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4">
       <div className="flex items-center">
@@ -33,18 +54,20 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
       </div>
       
       <div className="hidden md:flex mx-4 flex-1 items-center space-x-2 md:max-w-xl lg:max-w-3xl">
-        <div className="relative w-full">
+        <form className="relative w-full" onSubmit={handleSearch}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="search"
             placeholder="Search anything..."
             className="glass-input pl-10 w-full h-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
+        </form>
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" onClick={handleNotifications}>
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
           <span className="sr-only">Notifications</span>
@@ -60,14 +83,14 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem asChild>
-              <Link to="/profile">Profile</Link>
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              Profile
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings">Settings</Link>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

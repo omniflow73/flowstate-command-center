@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import PlaceholderPage from "./pages/PlaceholderPage";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,15 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/command-center" element={<PlaceholderPage />} />
+          <Route path="/focus" element={<PlaceholderPage />} />
+          <Route path="/tasks" element={<PlaceholderPage />} />
+          <Route path="/calendar" element={<PlaceholderPage />} />
+          <Route path="/time-tracking" element={<PlaceholderPage />} />
+          <Route path="/habits" element={<PlaceholderPage />} />
+          <Route path="/notes" element={<PlaceholderPage />} />
+          <Route path="/projects" element={<PlaceholderPage />} />
+          <Route path="/analytics" element={<PlaceholderPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

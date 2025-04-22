@@ -1,8 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCheck, CheckCircle, CheckCircle2, Circle } from "lucide-react";
+import { CheckCheck, CheckCircle, CheckCircle2, Circle, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 type Habit = {
   id: string;
@@ -75,6 +76,10 @@ export default function HabitTrackerCard() {
     });
   };
 
+  const addNewHabit = () => {
+    toast.info("Add new habit functionality would open a form here");
+  };
+
   // Generate last 7 days for the habit calendar
   const lastSevenDays = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
@@ -88,8 +93,11 @@ export default function HabitTrackerCard() {
 
   return (
     <Card className="glass-card">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle>Habit Tracker</CardTitle>
+        <Button variant="ghost" size="sm" onClick={addNewHabit}>
+          <Plus size={16} />
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

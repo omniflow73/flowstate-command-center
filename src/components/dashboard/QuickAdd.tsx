@@ -8,15 +8,19 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export default function QuickAdd() {
+  const [isOpen, setIsOpen] = useState(false);
+
   const handleQuickAdd = (type: string) => {
-    toast.info(`Creating new ${type}...`);
-    // Here you would typically open a modal or navigate to the creation form
+    toast.success(`Creating new ${type}...`);
+    setIsOpen(false);
+    // In a real implementation, this would open a modal or form
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button className="gap-2 bg-gradient-primary hover:opacity-90">
           <Plus size={16} />
