@@ -2,21 +2,21 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-base: '/flowstate-command-center/'
+
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
+  base: '/flowstate-command-center/', // Correct base URL for GitHub Pages deployment
   server: {
-    host: "::",
-    port: 8080,
+    host: "::", // Make sure this is necessary for your environment
+    port: 8080,  // Default development server port
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+    componentTagger(),  // Conditionally add this plugin if in development
+  ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./src"),  // Alias to make imports cleaner
     },
   },
-}));
+});
