@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Menu, Search, ChevronDown } from "lucide-react";
@@ -43,10 +42,21 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
     // In a real app, this would perform a logout action
   };
 
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleSidebar();
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4">
       <div className="flex items-center">
-        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-muted/50 active:bg-muted">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleMenuClick} 
+          className="hover:bg-muted/50 active:bg-muted"
+        >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle sidebar</span>
         </Button>

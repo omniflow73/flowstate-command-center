@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   Calendar, CheckSquare, Clock, Folder, 
   Home, LayoutGrid, Settings, UserCircle, 
@@ -55,6 +55,8 @@ const SidebarSection = ({ title, children }: { title: string; children: React.Re
 );
 
 export default function Sidebar({ isOpen }: SidebarProps) {
+  const location = useLocation();
+  
   return (
     <div 
       className={cn(
