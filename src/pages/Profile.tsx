@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useRef } from "react";
-import { UserCircle } from "lucide-react";
+import { ArrowLeft, UserCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("User");
   const [avatarUrl, setAvatarUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +36,13 @@ export default function Profile() {
 
   return (
     <div className="container max-w-2xl mx-auto p-4 space-y-8">
+      <div className="flex items-center space-x-4">
+        <Button variant="ghost" onClick={() => navigate('/')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Profile Settings</h1>
         <p className="text-muted-foreground">

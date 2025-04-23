@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Menu, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,17 @@ type NavbarProps = {
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      toast.info(`Searching for: ${searchQuery}`);
-      // In a real app, this would perform a search
+      setIsSearching(true);
+      setTimeout(() => {
+        toast.info(`Searching for: ${searchQuery}`);
+        setIsSearching(false);
+      }, 800);
     }
   };
 
@@ -42,7 +46,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4">
       <div className="flex items-center">
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-muted/50 active:bg-muted">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle sidebar</span>
         </Button>
@@ -62,7 +66,13 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
             className="glass-input pl-10 w-full h-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={isSearching}
           />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin" />
+            </div>
+          )}
         </form>
       </div>
       

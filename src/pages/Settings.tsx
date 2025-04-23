@@ -11,8 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState({
     emailNotifications: false,
     pushNotifications: false,
@@ -30,6 +33,13 @@ export default function Settings() {
 
   return (
     <div className="container max-w-4xl mx-auto p-4 space-y-8">
+      <div className="flex items-center space-x-4">
+        <Button variant="ghost" onClick={() => navigate('/')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">
