@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import TasksPage from "./pages/TasksPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -27,8 +28,12 @@ const getBasePath = () => {
 const baseUrl = getBasePath();
 
 const App = () => {
-  console.log("Current base URL:", baseUrl);
-  
+  // Log current path information to help with debugging
+  useEffect(() => {
+    console.log("Current path:", window.location.pathname);
+    console.log("Base URL:", baseUrl);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
