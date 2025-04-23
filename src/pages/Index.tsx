@@ -21,6 +21,9 @@ const Index = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
+    
+    // Reset scroll position to top when component mounts
+    window.scrollTo(0, 0);
   }, [isMobile]);
 
   const toggleSidebar = () => {
@@ -28,7 +31,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} />
       
       <div 
@@ -38,7 +41,7 @@ const Index = () => {
       >
         <Navbar toggleSidebar={toggleSidebar} />
         
-        <main className="p-4 md:p-6 max-w-7xl mx-auto animate-fade-in">
+        <main className="p-4 md:p-6 max-w-7xl mx-auto">
           <div className="space-y-6">
             {/* Greeting section */}
             <GreetingCard />
