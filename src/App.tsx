@@ -11,9 +11,17 @@ import NotFound from "./pages/NotFound";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import TasksPage from "./pages/TasksPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const queryClient = new QueryClient();
+// Create a new query client with error handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Get the base URL from the window location
 const getBasePath = () => {
@@ -28,11 +36,24 @@ const getBasePath = () => {
 const baseUrl = getBasePath();
 
 const App = () => {
-  // Log current path information to help with debugging
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Log current path information and handle initial loading
   useEffect(() => {
     console.log("Current path:", window.location.pathname);
     console.log("Base URL:", baseUrl);
+    
+    // Add a small timeout to ensure DOM is ready
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
+
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
