@@ -7,11 +7,13 @@ import { useState, useRef } from "react";
 import { ArrowLeft, UserCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "@/context/UserProfileContext";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("User");
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const { profile, updateProfile } = useUserProfile();
+  const [username, setUsername] = useState(profile.username);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,7 +21,9 @@ export default function Profile() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setAvatarUrl(e.target?.result as string);
+        const newAvatarUrl = e.target?.result as string;
+        setAvatarUrl(newAvatarUrl);
+        updateProfile({ username, avatarUrl: newAvatarUrl });
         toast.success("Avatar updated successfully!");
       };
       reader.readAsDataURL(file);
@@ -31,6 +35,7 @@ export default function Profile() {
       toast.error("Username must be at least 3 characters long");
       return;
     }
+    updateProfile({ username, avatarUrl });
     toast.success("Profile updated successfully!");
   };
 

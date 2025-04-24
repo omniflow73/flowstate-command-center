@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useUserProfile } from "@/context/UserProfileContext";
 
 type NavbarProps = {
   toggleSidebar: () => void;
@@ -19,6 +20,7 @@ type NavbarProps = {
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
@@ -97,8 +99,8 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
-                <AvatarImage src="" alt="User" />
-                <AvatarFallback>US</AvatarFallback>
+                <AvatarImage src={profile.avatarUrl} alt={profile.username} />
+                <AvatarFallback>{profile.username.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
