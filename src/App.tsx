@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,10 @@ import NotFound from "./pages/NotFound";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import TasksPage from "./pages/TasksPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import TimeTrackingPage from "./pages/TimeTrackingPage";
+import HabitsPage from "./pages/HabitsPage";
+import FocusModePage from "./pages/FocusModePage";
+import CommandCenterPage from "./pages/CommandCenterPage";
 import { useEffect, useState } from "react";
 import { UserProfileProvider } from "./context/UserProfileContext";
 
@@ -61,12 +66,12 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/command-center" element={<PlaceholderPage />} />
-              <Route path="/focus" element={<PlaceholderPage />} />
+              <Route path="/command-center" element={<CommandCenterPage />} />
+              <Route path="/focus" element={<FocusModePage />} />
               <Route path="/tasks" element={<TasksPage />} />
               <Route path="/calendar" element={<PlaceholderPage />} />
-              <Route path="/time-tracking" element={<PlaceholderPage />} />
-              <Route path="/habits" element={<PlaceholderPage />} />
+              <Route path="/time-tracking" element={<TimeTrackingPage />} />
+              <Route path="/habits" element={<HabitsPage />} />
               <Route path="/notes" element={<PlaceholderPage />} />
               <Route path="/projects" element={<PlaceholderPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />

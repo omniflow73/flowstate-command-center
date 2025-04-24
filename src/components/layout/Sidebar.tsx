@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { 
   Calendar, CheckSquare, Clock, Folder, 
   Home, LayoutGrid, Settings, UserCircle, 
-  PenSquare, BarChart2, Star, Boxes
+  PenSquare, BarChart2, Star, Boxes, Focus, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
@@ -71,14 +71,14 @@ export default function Sidebar({ isOpen }: SidebarProps) {
         <SidebarSection title="Overview">
           <NavItem icon={Home} label="Dashboard" to="/" />
           <NavItem icon={LayoutGrid} label="Command Center" to="/command-center" />
-          <NavItem icon={Star} label="Focus Mode" to="/focus" />
+          <NavItem icon={Focus} label="Focus Mode" to="/focus" />
         </SidebarSection>
         
         <SidebarSection title="Productivity">
           <NavItem icon={CheckSquare} label="Tasks" to="/tasks" badge={5} />
           <NavItem icon={Calendar} label="Calendar" to="/calendar" />
           <NavItem icon={Clock} label="Time Tracking" to="/time-tracking" />
-          <NavItem icon={Boxes} label="Habits" to="/habits" />
+          <NavItem icon={Activity} label="Habits" to="/habits" />
         </SidebarSection>
         
         <SidebarSection title="Workspace">
