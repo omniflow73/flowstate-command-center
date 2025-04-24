@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { BackButton } from "@/components/ui/back-button";
 
 type TimeEntry = {
   id: string;
@@ -58,12 +58,10 @@ export default function TimeTrackingPage() {
   
   const { toast } = useToast();
 
-  // Update localStorage when timeEntries changes
   useEffect(() => {
     localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
   }, [timeEntries]);
 
-  // Timer logic for the currently running task
   useEffect(() => {
     let interval: number | undefined;
     
@@ -105,7 +103,6 @@ export default function TimeTrackingPage() {
       isRunning: true,
     };
 
-    // If there's already a running entry, pause it
     if (activeEntryId) {
       pauseTimer(activeEntryId);
     }
@@ -122,7 +119,6 @@ export default function TimeTrackingPage() {
   };
 
   const resumeTimer = (id: string) => {
-    // If there's already a running entry, pause it
     if (activeEntryId) {
       pauseTimer(activeEntryId);
     }
@@ -245,6 +241,7 @@ export default function TimeTrackingPage() {
 
   return (
     <div className="container px-4 py-8 max-w-6xl mx-auto">
+      <BackButton />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Time Tracking</h1>
         <Dialog open={newTaskDialog} onOpenChange={setNewTaskDialog}>

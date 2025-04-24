@@ -1,1247 +1,515 @@
-
-import React, { useState, useEffect, useRef } from "react";
-import { 
-  Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter 
-} from "@/components/ui/card";
-import { 
-  Command, CommandDialog, CommandEmpty, CommandGroup, 
-  CommandInput, CommandItem, CommandList, CommandShortcut
-} from "@/components/ui/command";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { Separator } from "@/components/ui/separator";
-import { 
-  MenubarMenu, Menubar, MenubarTrigger, MenubarContent, 
-  MenubarItem, MenubarSeparator 
-} from "@/components/ui/menubar";
-import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
-import { 
-  Command as CommandIcon, Search, Calendar, Clock, CheckSquare, 
-  FileText, Settings, BookOpen, UserCircle, Home, Plus,
-  Grid2X2, Star, Trash2, Edit, Layers, Copy, Share2, 
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   FileCheck, Folder, Star as StarFilled, GitBranch, GitPullRequest,
   ListChecks, Trello, Boxes, Database, Layout, MoreVertical,
   ChevronRight, Activity, ArrowRightCircle, ExternalLink, BarChart2,
-  Focus, Calculator, Terminal, Play, Check, X
+  Focus, Calculator, Terminal, Play, Check, X, Clock
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { BackButton } from "@/components/ui/back-button";
 
-// Define interface for quick action
+interface Project {
+  id: string;
+  name: string;
+  tasks: { name: string; completed: boolean }[];
+}
+
+interface Task {
+  id: string;
+  name: string;
+  completed: boolean;
+}
+
 interface QuickAction {
   id: string;
   name: string;
   description: string;
-  icon: React.ReactNode;
-  path?: string;
-  shortcuts?: string[];
-  action?: () => void;
-  category: 'navigation' | 'task' | 'note' | 'calendar' | 'system' | 'automation';
-  pinned?: boolean;
+  icon: React.ElementType;
+  route?: string;
+  onClick?: () => void;
 }
 
-interface RecentItem {
-  id: string;
-  name: string;
-  type: 'task' | 'note' | 'project' | 'calendar' | 'dashboard';
-  icon: React.ReactNode;
-  path: string;
-  lastAccessed: string;
-}
+const initialProjects: Project[] = [
+  {
+    id: "proj-1",
+    name: "Website Redesign",
+    tasks: [
+      { id: "task-1", name: "Design mockups", completed: true },
+      { id: "task-2", name: "Develop frontend", completed: false },
+    ],
+  },
+  {
+    id: "proj-2",
+    name: "Mobile App Development",
+    tasks: [
+      { id: "task-3", name: "Plan user stories", completed: false },
+      { id: "task-4", name: "Design UI", completed: false },
+    ],
+  },
+];
 
-interface Workflow {
-  id: string;
-  name: string;
-  description: string;
-  steps: WorkflowStep[];
-  pinnedToHome?: boolean;
-}
-
-interface WorkflowStep {
-  id: string;
-  description: string;
-  path?: string;
-  completed: boolean;
-  action?: () => void;
-}
+const initialTasks: Task[] = [
+  { id: "task-5", name: "Review code", completed: false },
+  { id: "task-6", name: "Write documentation", completed: true },
+];
 
 export default function CommandCenterPage() {
-  const [isCommandOpen, setIsCommandOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [pinnedActions, setPinnedActions] = useState<QuickAction[]>(() => {
-    const saved = localStorage.getItem('pinnedActions');
-    return saved ? JSON.parse(saved) : defaultQuickActions.filter(a => a.pinned);
-  });
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [projects, setProjects] = useState(initialProjects);
+  const [tasks, setTasks] = useState(initialTasks);
+  const [isAddingProject, setIsAddingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [newTaskName, setNewTaskName] = useState("");
+  const [isWorkflowRunning, setIsWorkflowRunning] = useState(false);
+  const [workflowProgress, setWorkflowProgress] = useState(0);
+  const navigate = useNavigate();
   
-  const [recentItems, setRecentItems] = useState<RecentItem[]>(() => {
-    const saved = localStorage.getItem('recentItems');
-    return saved ? JSON.parse(saved) : defaultRecentItems;
-  });
-  
-  const [workflows, setWorkflows] = useState<Workflow[]>(() => {
-    const saved = localStorage.getItem('workflows');
-    return saved ? JSON.parse(saved) : defaultWorkflows;
-  });
-  
-  const [activeTab, setActiveTab] = useState<string>("quickActions");
-  const [newWorkflow, setNewWorkflow] = useState<{name: string, description: string}>({
-    name: '',
-    description: ''
-  });
-  const [isCreatingWorkflow, setIsCreatingWorkflow] = useState(false);
-  const [currentWorkflowSteps, setCurrentWorkflowSteps] = useState<WorkflowStep[]>([]);
-  
-  const commandInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  
-  // Save to localStorage when state changes
-  useEffect(() => {
-    localStorage.setItem('pinnedActions', JSON.stringify(pinnedActions));
-  }, [pinnedActions]);
-  
-  useEffect(() => {
-    localStorage.setItem('recentItems', JSON.stringify(recentItems));
-  }, [recentItems]);
-  
-  useEffect(() => {
-    localStorage.setItem('workflows', JSON.stringify(workflows));
-  }, [workflows]);
-  
-  // Setup keyboard shortcut for command palette
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsCommandOpen(true);
-      }
-      
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault();
-        if (commandInputRef.current) {
-          commandInputRef.current.focus();
-        }
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-  
-  const pinAction = (action: QuickAction) => {
-    const isPinned = pinnedActions.some(a => a.id === action.id);
-    
-    if (isPinned) {
-      setPinnedActions(pinnedActions.filter(a => a.id !== action.id));
-      toast({
-        title: "Action Unpinned",
-        description: `"${action.name}" has been removed from pinned actions`,
-      });
-    } else {
-      setPinnedActions([...pinnedActions, {...action, pinned: true}]);
-      toast({
-        title: "Action Pinned",
-        description: `"${action.name}" has been added to pinned actions`,
-      });
+  // This function will be replaced to use route navigation instead of embedded links
+  const handleQuickActionClick = (action: QuickAction) => {
+    if (action.route) {
+      navigate(action.route);
+    } else if (action.onClick) {
+      action.onClick();
     }
   };
-  
-  const logRecentItem = (item: RecentItem) => {
-    const now = new Date().toISOString();
-    
-    // Check if item already exists in recents
-    const exists = recentItems.some(i => i.id === item.id);
-    
-    if (exists) {
-      // Update last accessed time
-      setRecentItems(recentItems.map(i => 
-        i.id === item.id ? {...i, lastAccessed: now} : i
-      ));
-    } else {
-      // Add to recents
-      setRecentItems([{...item, lastAccessed: now}, ...recentItems.slice(0, 9)]);
-    }
+
+  // Update the quick actions to use routes instead of links
+  const quickActions = [
+    {
+      id: "focus",
+      name: "Enter Focus Mode",
+      description: "Start a focused work session",
+      icon: Focus,
+      route: "/focus",
+    },
+    {
+      id: "tasks",
+      name: "View Tasks",
+      description: "Check your pending tasks",
+      icon: ListChecks,
+      route: "/tasks",
+    },
+    {
+      id: "time",
+      name: "Track Time",
+      description: "Start time tracking",
+      icon: Clock,
+      route: "/time-tracking",
+    },
+    {
+      id: "habits",
+      name: "Habits Dashboard",
+      description: "Track your habits",
+      icon: Activity,
+      route: "/habits",
+    },
+    {
+      id: "analytics",
+      name: "View Analytics",
+      description: "See your productivity stats",
+      icon: BarChart2,
+      route: "/analytics",
+    },
+  ];
+
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleProjectSelect = (projectId: string) => {
+    setSelectedProjectId(projectId);
   };
-  
-  const removeRecentItem = (id: string) => {
-    setRecentItems(recentItems.filter(item => item.id !== id));
-    toast({
-      title: "Item Removed",
-      description: "Item removed from recent activity",
-    });
-  };
-  
-  const handleExecuteAction = (action: QuickAction) => {
-    if (action.path) {
-      // Log this as a recent item if it has a path
-      logRecentItem({
-        id: action.id,
-        name: action.name,
-        type: action.category === 'task' ? 'task' : 
-              action.category === 'note' ? 'note' :
-              action.category === 'calendar' ? 'calendar' : 'dashboard',
-        icon: action.icon,
-        path: action.path,
-        lastAccessed: new Date().toISOString()
-      });
-    }
-    
-    if (action.action) {
-      action.action();
-    }
-    
-    toast({
-      title: "Action Executed",
-      description: `"${action.name}" has been triggered`,
-    });
-  };
-  
-  const addWorkflow = () => {
-    if (!newWorkflow.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Workflow name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (currentWorkflowSteps.length === 0) {
-      toast({
-        title: "Error",
-        description: "Add at least one step to your workflow",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const workflow: Workflow = {
-      id: Date.now().toString(),
-      name: newWorkflow.name,
-      description: newWorkflow.description,
-      steps: currentWorkflowSteps
-    };
-    
-    setWorkflows([...workflows, workflow]);
-    setIsCreatingWorkflow(false);
-    setNewWorkflow({ name: '', description: '' });
-    setCurrentWorkflowSteps([]);
-    
-    toast({
-      title: "Workflow Created",
-      description: `"${newWorkflow.name}" workflow has been created`,
-    });
-  };
-  
-  const addWorkflowStep = (action: QuickAction) => {
-    if (!isCreatingWorkflow) return;
-    
-    const step: WorkflowStep = {
-      id: Date.now().toString(),
-      description: `Navigate to ${action.name}`,
-      path: action.path,
-      completed: false
-    };
-    
-    setCurrentWorkflowSteps([...currentWorkflowSteps, step]);
-    
-    toast({
-      title: "Step Added",
-      description: `Added "${action.name}" to workflow`,
-    });
-  };
-  
-  const removeWorkflowStep = (stepId: string) => {
-    setCurrentWorkflowSteps(currentWorkflowSteps.filter(step => step.id !== stepId));
-  };
-  
-  const removeWorkflow = (id: string) => {
-    setWorkflows(workflows.filter(workflow => workflow.id !== id));
-    
-    toast({
-      title: "Workflow Deleted",
-      description: "Workflow has been removed",
-    });
-  };
-  
-  const toggleWorkflowStepCompletion = (workflowId: string, stepId: string) => {
-    setWorkflows(workflows.map(workflow => {
-      if (workflow.id === workflowId) {
-        return {
-          ...workflow,
-          steps: workflow.steps.map(step => {
-            if (step.id === stepId) {
-              return {
-                ...step,
-                completed: !step.completed
-              };
+
+  const handleTaskComplete = (projectId: string, taskId: string) => {
+    setProjects((prevProjects) =>
+      prevProjects.map((project) =>
+        project.id === projectId
+          ? {
+              ...project,
+              tasks: project.tasks.map((task) =>
+                task.id === taskId ? { ...task, completed: !task.completed } : task
+              ),
             }
-            return step;
-          })
-        };
-      }
-      return workflow;
-    }));
-  };
-  
-  const togglePinWorkflow = (id: string) => {
-    setWorkflows(workflows.map(workflow => {
-      if (workflow.id === id) {
-        return {
-          ...workflow,
-          pinnedToHome: !workflow.pinnedToHome
-        };
-      }
-      return workflow;
-    }));
-    
-    toast({
-      title: "Workflow Updated",
-      description: "Workflow pin status has been updated",
-    });
-  };
-  
-  // Filter actions based on search query
-  const filteredActions = searchQuery 
-    ? defaultQuickActions.filter(action => 
-        action.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        action.description.toLowerCase().includes(searchQuery.toLowerCase())
+          : project
       )
-    : defaultQuickActions;
-    
-  const sortedRecentItems = recentItems
-    .sort((a, b) => new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime());
+    );
+  };
+
+  const handleAddTask = () => {
+    if (!selectedProjectId || !newTaskName.trim()) return;
+
+    const newTask = {
+      id: `task-${Date.now()}`,
+      name: newTaskName,
+      completed: false,
+    };
+
+    setProjects((prevProjects) =>
+      prevProjects.map((project) =>
+        project.id === selectedProjectId
+          ? { ...project, tasks: [...project.tasks, newTask] }
+          : project
+      )
+    );
+
+    setNewTaskName("");
+  };
+
+  const handleAddProject = () => {
+    if (!newProjectName.trim()) return;
+
+    const newProject = {
+      id: `proj-${Date.now()}`,
+      name: newProjectName,
+      tasks: [],
+    };
+
+    setProjects([...projects, newProject]);
+    setNewProjectName("");
+    setIsAddingProject(false);
+  };
+
+  const startWorkflow = () => {
+    setIsWorkflowRunning(true);
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      setWorkflowProgress(progress);
+      if (progress >= 100) {
+        clearInterval(interval);
+        setIsWorkflowRunning(false);
+      }
+    }, 300);
+  };
 
   return (
-    <div className="container px-4 py-8 max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <CommandIcon className="h-8 w-8" />
-            Command Center
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Your personal command hub for quick actions and workflows
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsCommandOpen(true)}
-            className="min-w-[160px]"
+    <div className="container max-w-6xl mx-auto px-4 py-8">
+      <BackButton />
+      <h1 className="text-3xl font-bold mb-6">Command Center</h1>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Open Command</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+          </DialogHeader>
+          <Command>
+            <CommandInput placeholder="Type a command or search..." />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup heading="Projects">
+                {filteredProjects.slice(0, 5).map((project) => (
+                  <CommandItem key={project.id}>{project.name}</CommandItem>
+                ))}
+              </CommandGroup>
+              <CommandGroup heading="Settings">
+                <CommandItem>Profile</CommandItem>
+                <CommandItem>Appearance</CommandItem>
+                <CommandItem>Keyboard Shortcuts</CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Fix for Quick Actions section to use navigation instead of embedded links */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        {quickActions.map((action) => (
+          <Card 
+            key={action.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleQuickActionClick(action)}
           >
-            <Search className="h-4 w-4 mr-2" />
-            Quick Search
-            <span className="ml-auto text-xs text-muted-foreground">⌘K</span>
-          </Button>
-        </div>
-      </div>
-      
-      {/* Command Palette Dialog */}
-      <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
-        <CommandInput placeholder="Type a command or search..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          
-          <CommandGroup heading="Quick Actions">
-            {defaultQuickActions.slice(0, 5).map(action => (
-              <CommandItem
-                key={action.id}
-                onSelect={() => {
-                  setIsCommandOpen(false);
-                  handleExecuteAction(action);
-                }}
-              >
-                {action.icon}
-                <span className="ml-2">{action.name}</span>
-                {action.shortcuts && (
-                  <CommandShortcut>
-                    {action.shortcuts.join('+')}
-                  </CommandShortcut>
-                )}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-          
-          <CommandGroup heading="Navigation">
-            {defaultQuickActions
-              .filter(action => action.category === 'navigation')
-              .map(action => (
-                <CommandItem
-                  key={action.id}
-                  onSelect={() => {
-                    setIsCommandOpen(false);
-                    handleExecuteAction(action);
-                  }}
-                >
-                  {action.icon}
-                  <span className="ml-2">{action.name}</span>
-                  {action.shortcuts && (
-                    <CommandShortcut>
-                      {action.shortcuts.join('+')}
-                    </CommandShortcut>
-                  )}
-                </CommandItem>
-              ))
-            }
-          </CommandGroup>
-          
-          <CommandGroup heading="Recent Items">
-            {sortedRecentItems.slice(0, 3).map(item => (
-              <CommandItem
-                key={item.id}
-                onSelect={() => {
-                  setIsCommandOpen(false);
-                  window.location.href = item.path;
-                }}
-              >
-                {item.icon}
-                <span className="ml-2">{item.name}</span>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {item.type}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
-      
-      <div className="mb-6">
-        <Card className="border-dashed bg-background/70">
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={commandInputRef}
-                placeholder="Search actions, workflows, and more..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs 
-        value={activeTab} 
-        onValueChange={setActiveTab} 
-        className="mb-8"
-      >
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="quickActions">Quick Actions</TabsTrigger>
-          <TabsTrigger value="recents">Recent Activity</TabsTrigger>
-          <TabsTrigger value="workflows">Workflows</TabsTrigger>
-          <TabsTrigger value="favorites">Favorites</TabsTrigger>
-        </TabsList>
-        
-        {/* Quick Actions Tab */}
-        <TabsContent value="quickActions" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Pinned Actions */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-amber-500" />
-                  Pinned Actions
-                </CardTitle>
-                <CardDescription>
-                  Your most frequently used actions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {pinnedActions.length === 0 ? (
-                    <div className="col-span-2 text-center py-8 text-muted-foreground">
-                      <p>No pinned actions yet</p>
-                      <p className="text-sm mt-1">Pin your favorite actions for quick access</p>
-                    </div>
-                  ) : (
-                    pinnedActions.map(action => (
-                      <ContextMenu key={action.id}>
-                        <ContextMenuTrigger>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start"
-                            onClick={() => handleExecuteAction(action)}
-                            asChild={!!action.path}
-                          >
-                            {action.path ? (
-                              <Link to={action.path}>
-                                {action.icon}
-                                <span className="ml-2 truncate">{action.name}</span>
-                              </Link>
-                            ) : (
-                              <>
-                                {action.icon}
-                                <span className="ml-2 truncate">{action.name}</span>
-                              </>
-                            )}
-                          </Button>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="w-48">
-                          <ContextMenuItem onClick={() => pinAction(action)}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remove from Pins
-                          </ContextMenuItem>
-                          {isCreatingWorkflow && (
-                            <ContextMenuItem onClick={() => addWorkflowStep(action)}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add to Workflow
-                            </ContextMenuItem>
-                          )}
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Categories */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2">
-                    <Grid2X2 className="h-5 w-5" />
-                    Categories
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <Button variant="outline" className="h-auto flex flex-col p-4 items-center justify-center gap-3">
-                      <CheckSquare className="h-8 w-8 text-blue-500" />
-                      <span>Tasks</span>
-                    </Button>
-                    <Button variant="outline" className="h-auto flex flex-col p-4 items-center justify-center gap-3">
-                      <FileText className="h-8 w-8 text-purple-500" />
-                      <span>Notes</span>
-                    </Button>
-                    <Button variant="outline" className="h-auto flex flex-col p-4 items-center justify-center gap-3">
-                      <Calendar className="h-8 w-8 text-red-500" />
-                      <span>Calendar</span>
-                    </Button>
-                    <Button variant="outline" className="h-auto flex flex-col p-4 items-center justify-center gap-3">
-                      <Folder className="h-8 w-8 text-amber-500" />
-                      <span>Projects</span>
-                    </Button>
-                    <Button variant="outline" className="h-auto flex flex-col p-4 items-center justify-center gap-3">
-                      <Focus className="h-8 w-8 text-green-500" />
-                      <span>Focus</span>
-                    </Button>
-                    <Button variant="outline" className="h-auto flex flex-col p-4 items-center justify-center gap-3">
-                      <BarChart2 className="h-8 w-8 text-sky-500" />
-                      <span>Analytics</span>
-                    </Button>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <action.icon className="h-5 w-5 text-primary" />
                   </div>
-                </CardContent>
-              </Card>
-              
-              {/* Create Workflow Button */}
-              {!isCreatingWorkflow ? (
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  onClick={() => setIsCreatingWorkflow(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Workflow
+                  <CardTitle className="text-lg">{action.name}</CardTitle>
+                </div>
+                <Button variant="ghost" size="icon">
+                  <ArrowRightCircle className="h-5 w-5" />
                 </Button>
-              ) : (
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={() => setIsCreatingWorkflow(false)}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel Workflow Creation
-                </Button>
-              )}
-            </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{action.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Projects</CardTitle>
+          <CardDescription>Manage your ongoing projects and tasks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <Input
+              type="search"
+              placeholder="Search projects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button onClick={() => setIsAddingProject(true)}>Add Project</Button>
           </div>
-          
-          {/* All Actions */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>All Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="all">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="navigation">Navigation</TabsTrigger>
-                  <TabsTrigger value="task">Task</TabsTrigger>
-                  <TabsTrigger value="productivity">Productivity</TabsTrigger>
-                  <TabsTrigger value="system">System</TabsTrigger>
-                </TabsList>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {filteredActions.map(action => {
-                    const isPinned = pinnedActions.some(a => a.id === action.id);
-                    
-                    return (
-                      <ContextMenu key={action.id}>
-                        <ContextMenuTrigger>
-                          <Card 
-                            className={`cursor-pointer hover:border-primary/50 transition-colors ${
-                              isPinned ? "border-primary/40 bg-primary/5" : ""
-                            }`}
-                            onClick={() => handleExecuteAction(action)}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-3">
-                                {action.icon}
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-medium">{action.name}</h4>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {action.description}
-                                  </p>
-                                </div>
-                                {isPinned && (
-                                  <Star className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="w-48">
-                          <ContextMenuItem onClick={() => pinAction(action)}>
-                            {isPinned ? (
-                              <>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Unpin Action
-                              </>
-                            ) : (
-                              <>
-                                <Star className="h-4 w-4 mr-2" />
-                                Pin Action
-                              </>
-                            )}
-                          </ContextMenuItem>
-                          {action.path && (
-                            <ContextMenuItem>
-                              <Link to={action.path} className="flex items-center w-full">
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                Open in New Tab
-                              </Link>
-                            </ContextMenuItem>
-                          )}
-                          {isCreatingWorkflow && (
-                            <ContextMenuItem onClick={() => addWorkflowStep(action)}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add to Workflow
-                            </ContextMenuItem>
-                          )}
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    );
-                  })}
-                </div>
-              </Tabs>
-            </CardContent>
-          </Card>
-          
-          {/* Workflow Creation Form */}
-          {isCreatingWorkflow && (
-            <Card className="border-primary border-dashed">
-              <CardHeader className="pb-2">
-                <CardTitle>Create New Workflow</CardTitle>
-                <CardDescription>
-                  Combine multiple actions into a single workflow
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Workflow Name</label>
-                  <Input 
-                    placeholder="Enter workflow name" 
-                    value={newWorkflow.name}
-                    onChange={(e) => setNewWorkflow({...newWorkflow, name: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Description (optional)</label>
-                  <Input 
-                    placeholder="Enter workflow description" 
-                    value={newWorkflow.description}
-                    onChange={(e) => setNewWorkflow({...newWorkflow, description: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Steps</label>
-                  {currentWorkflowSteps.length === 0 ? (
-                    <div className="text-center py-4 border rounded-md border-dashed">
-                      <p className="text-muted-foreground">
-                        No steps added yet
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Right-click on actions to add them to your workflow
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {currentWorkflowSteps.map((step, index) => (
-                        <div 
-                          key={step.id}
-                          className="flex items-center gap-2 border rounded-md p-2"
-                        >
-                          <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
-                            {index + 1}
-                          </Badge>
-                          <span className="flex-1">{step.description}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7"
-                            onClick={() => removeWorkflowStep(step.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full"
-                  onClick={addWorkflow}
-                  disabled={!newWorkflow.name || currentWorkflowSteps.length === 0}
-                >
-                  Create Workflow
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-        </TabsContent>
-        
-        {/* Recent Activity Tab */}
-        <TabsContent value="recents" className="space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Your recently accessed items and actions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {sortedRecentItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No recent activity</p>
-                  <p className="text-sm mt-1">Your recent items will appear here</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {sortedRecentItems.map(item => (
-                    <ContextMenu key={item.id}>
-                      <ContextMenuTrigger>
-                        <div className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
-                          <div className="flex items-center gap-3">
-                            {item.icon}
-                            <div>
-                              <h4 className="text-sm font-medium">{item.name}</h4>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Badge variant="outline" className="text-xs py-0">
-                                  {item.type}
-                                </Badge>
-                                <span>
-                                  {new Date(item.lastAccessed).toLocaleDateString(undefined, {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <Link to={item.path}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="w-48">
-                        <ContextMenuItem asChild>
-                          <Link to={item.path} className="flex items-center w-full">
-                            <ArrowRightCircle className="h-4 w-4 mr-2" />
-                            Go to {item.name}
-                          </Link>
-                        </ContextMenuItem>
-                        <ContextMenuItem onClick={() => removeRecentItem(item.id)}>
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Remove from Recents
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Workflows Tab */}
-        <TabsContent value="workflows" className="space-y-6">
-          {workflows.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-10">
-                <Layers className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="text-xl font-medium mt-4 mb-2">No workflows yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Create workflows to combine multiple actions into a single sequence
-                </p>
-                <Button 
-                  onClick={() => {
-                    setIsCreatingWorkflow(true);
-                    setActiveTab("quickActions");
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Workflow
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {workflows.map(workflow => (
-                <ContextMenu key={workflow.id}>
-                  <ContextMenuTrigger>
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle>{workflow.name}</CardTitle>
-                            {workflow.description && (
-                              <CardDescription>{workflow.description}</CardDescription>
-                            )}
-                          </div>
-                          <Menubar className="h-8">
-                            <MenubarMenu>
-                              <MenubarTrigger className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </MenubarTrigger>
-                              <MenubarContent>
-                                <MenubarItem onClick={() => togglePinWorkflow(workflow.id)}>
-                                  {workflow.pinnedToHome ? (
-                                    <>
-                                      <StarFilled className="h-4 w-4 mr-2 text-yellow-400" />
-                                      Unpin from Home
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Star className="h-4 w-4 mr-2" />
-                                      Pin to Home
-                                    </>
-                                  )}
-                                </MenubarItem>
-                                <MenubarSeparator />
-                                <MenubarItem onClick={() => removeWorkflow(workflow.id)}>
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Workflow
-                                </MenubarItem>
-                              </MenubarContent>
-                            </MenubarMenu>
-                          </Menubar>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {workflow.steps.map((step, index) => (
-                            <div 
-                              key={step.id}
-                              className="flex items-center gap-2"
-                            >
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-7 w-7 ${
-                                  step.completed ? "bg-primary/10 text-primary" : "bg-muted"
-                                }`}
-                                onClick={() => toggleWorkflowStepCompletion(workflow.id, step.id)}
-                              >
-                                {step.completed ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <span className="text-xs">{index + 1}</span>
-                                )}
-                              </Button>
-                              <div className="flex-1 flex items-center gap-1">
-                                <span className={step.completed ? "text-muted-foreground line-through" : ""}>
-                                  {step.description}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          disabled={workflow.steps.every(step => step.completed)}
-                        >
-                          {workflow.steps.every(step => step.completed) ? (
-                            <>
-                              <FileCheck className="h-4 w-4 mr-2" />
-                              Complete
-                            </>
-                          ) : (
-                            <>
-                              <Play className="h-4 w-4 mr-2" />
-                              Run Workflow
-                            </>
-                          )}
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="w-48">
-                    <ContextMenuItem onClick={() => togglePinWorkflow(workflow.id)}>
-                      {workflow.pinnedToHome ? (
-                        <>
-                          <StarFilled className="h-4 w-4 mr-2 text-yellow-400" />
-                          Unpin from Home
-                        </>
-                      ) : (
-                        <>
-                          <Star className="h-4 w-4 mr-2" />
-                          Pin to Home
-                        </>
-                      )}
-                    </ContextMenuItem>
-                    <ContextMenuItem onClick={() => removeWorkflow(workflow.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Workflow
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
-              ))}
+          {isAddingProject ? (
+            <div className="flex items-center mb-4">
+              <Input
+                type="text"
+                placeholder="Project name"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+              />
+              <Button onClick={handleAddProject} className="ml-2">
+                Create
+              </Button>
+              <Button variant="ghost" onClick={() => setIsAddingProject(false)}>
+                Cancel
+              </Button>
             </div>
-          )}
-        </TabsContent>
-        
-        {/* Favorites Tab */}
-        <TabsContent value="favorites" className="space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Favorites</CardTitle>
-              <CardDescription>
-                Your pinned actions and workflows
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Pinned Actions */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                    Pinned Actions
-                  </h3>
-                  
-                  {pinnedActions.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                      <p>No pinned actions</p>
-                      <p className="text-xs mt-1">
-                        Pin actions from the Quick Actions tab
-                      </p>
+          ) : null}
+          <Tabs defaultValue="all">
+            <TabsList className="mb-4">
+              <TabsTrigger value="all">All Projects</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+            <TabsContent value="all">
+              {filteredProjects.map((project) => (
+                <Card key={project.id} className="mb-4">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle
+                        className="cursor-pointer"
+                        onClick={() => handleProjectSelect(project.id)}
+                      >
+                        {project.name}
+                      </CardTitle>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <FileCheck className="mr-2 h-4 w-4" />
+                            Mark as Complete
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Folder className="mr-2 h-4 w-4" />
+                            Add to Team
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <GitBranch className="mr-2 h-4 w-4" />
+                            Share Project
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {pinnedActions.map(action => (
-                        <Button
-                          key={action.id}
-                          variant="outline"
-                          className="justify-start"
-                          onClick={() => handleExecuteAction(action)}
-                          asChild={!!action.path}
-                        >
-                          {action.path ? (
-                            <Link to={action.path}>
-                              {action.icon}
-                              <span className="ml-2">{action.name}</span>
-                            </Link>
-                          ) : (
-                            <>
-                              {action.icon}
-                              <span className="ml-2">{action.name}</span>
-                            </>
-                          )}
-                        </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <ul>
+                      {project.tasks.map((task) => (
+                        <li key={task.id} className="flex items-center justify-between">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={task.completed}
+                              onChange={() => handleTaskComplete(project.id, task.id)}
+                              className="mr-2"
+                            />
+                            {task.name}
+                          </label>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <FileCheck className="mr-2 h-4 w-4" />
+                                Mark as Complete
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Folder className="mr-2 h-4 w-4" />
+                                Add to Team
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <GitBranch className="mr-2 h-4 w-4" />
+                                Share Project
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </li>
                       ))}
+                    </ul>
+                    {selectedProjectId === project.id ? (
+                      <div className="flex items-center mt-4">
+                        <Input
+                          type="text"
+                          placeholder="New task name"
+                          value={newTaskName}
+                          onChange={(e) => setNewTaskName(e.target.value)}
+                        />
+                        <Button onClick={handleAddTask} className="ml-2">
+                          Add Task
+                        </Button>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+            <TabsContent value="active">
+              <div>Active Projects Content</div>
+            </TabsContent>
+            <TabsContent value="completed">
+              <div>Completed Projects Content</div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+       
+      {/* Remember to close the Tabs component properly */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Workflows</CardTitle>
+          <CardDescription>Automated task sequences for common activities</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="productivity">
+            <TabsList className="mb-4">
+              <TabsTrigger value="productivity">Productivity</TabsTrigger>
+              <TabsTrigger value="project">Project</TabsTrigger>
+              <TabsTrigger value="personal">Personal</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="productivity">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <ListChecks className="h-5 w-5 text-primary" />
                     </div>
-                  )}
-                </div>
-                
-                <Separator />
-                
-                {/* Pinned Workflows */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                    Pinned Workflows
-                  </h3>
-                  
-                  {workflows.filter(w => w.pinnedToHome).length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground border rounded-md border-dashed">
-                      <p>No pinned workflows</p>
-                      <p className="text-xs mt-1">
-                        Pin workflows from the Workflows tab
+                    <div>
+                      <h3 className="text-lg font-semibold">Morning Routine</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Start your day with a set of productive tasks
                       </p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                      {workflows
-                        .filter(w => w.pinnedToHome)
-                        .map(workflow => (
-                          <Card key={workflow.id} className="bg-secondary/10">
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-medium">{workflow.name}</h4>
-                                <StarFilled className="h-4 w-4 text-yellow-400" />
-                              </div>
-                              {workflow.description && (
-                                <p className="text-sm text-muted-foreground mb-3">
-                                  {workflow.description}
-                                </p>
-                              )}
-                              <Progress 
-                                value={
-                                  (workflow.steps.filter(s => s.completed).length / 
-                                  workflow.steps.length) * 100
-                                }
-                                className="h-1 mb-2"
-                              />
-                              <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                <span>
-                                  {workflow.steps.filter(s => s.completed).length} of {workflow.steps.length} steps
-                                </span>
-                                <span>
-                                  {Math.round((workflow.steps.filter(s => s.completed).length / 
-                                    workflow.steps.length) * 100)}%
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      }
+                  </div>
+                  <Button variant="ghost">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Trello className="h-5 w-5 text-primary" />
                     </div>
-                  )}
+                    <div>
+                      <h3 className="text-lg font-semibold">Project Kickoff</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Initiate a new project with predefined steps
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+            
+            <TabsContent value="project">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Database className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Data Migration</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Migrate data between databases
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="personal">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Layout className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">System Update</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Keep your system up-to-date
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-// Default quick actions
-const defaultQuickActions: QuickAction[] = [
-  {
-    id: "dashboard",
-    name: "Dashboard",
-    description: "Return to main dashboard",
-    icon: <Home className="h-4 w-4" />,
-    path: "/",
-    shortcuts: ["Alt", "H"],
-    category: 'navigation',
-    pinned: true,
-  },
-  {
-    id: "add-task",
-    name: "New Task",
-    description: "Add a new task",
-    icon: <CheckSquare className="h-4 w-4" />,
-    path: "/tasks",
-    shortcuts: ["Alt", "T"],
-    category: 'task',
-    pinned: true,
-  },
-  {
-    id: "calendar",
-    name: "Calendar",
-    description: "View your calendar",
-    icon: <Calendar className="h-4 w-4" />,
-    path: "/calendar",
-    shortcuts: ["Alt", "C"],
-    category: 'calendar',
-  },
-  {
-    id: "time-tracking",
-    name: "Time Tracking",
-    description: "Track your time",
-    icon: <Clock className="h-4 w-4" />,
-    path: "/time-tracking",
-    category: 'navigation',
-  },
-  {
-    id: "focus-mode",
-    name: "Focus Mode",
-    description: "Enter distraction-free mode",
-    icon: <Focus className="h-4 w-4" />,
-    path: "/focus",
-    shortcuts: ["Alt", "F"],
-    category: 'navigation',
-    pinned: true,
-  },
-  {
-    id: "notes",
-    name: "Notes",
-    description: "View your notes",
-    icon: <FileText className="h-4 w-4" />,
-    path: "/notes",
-    category: 'note',
-  },
-  {
-    id: "profile",
-    name: "Profile",
-    description: "View your profile",
-    icon: <UserCircle className="h-4 w-4" />,
-    path: "/profile",
-    category: 'navigation',
-  },
-  {
-    id: "settings",
-    name: "Settings",
-    description: "Change app settings",
-    icon: <Settings className="h-4 w-4" />,
-    path: "/settings",
-    category: 'system',
-  },
-  {
-    id: "analytics",
-    name: "Analytics",
-    description: "View your productivity analytics",
-    icon: <BarChart2 className="h-4 w-4" />,
-    path: "/analytics",
-    category: 'navigation',
-  },
-  {
-    id: "habits",
-    name: "Habits",
-    description: "Track your habits",
-    icon: <Activity className="h-4 w-4" />,
-    path: "/habits",
-    category: 'task',
-  },
-  {
-    id: "projects",
-    name: "Projects",
-    description: "Manage your projects",
-    icon: <Folder className="h-4 w-4" />,
-    path: "/projects",
-    category: 'navigation',
-  },
-  {
-    id: "calculator",
-    name: "Calculator",
-    description: "Quick calculations",
-    icon: <Calculator className="h-4 w-4" />,
-    action: () => {
-      window.open('https://www.calculator.net/', '_blank');
-    },
-    category: 'system',
-  },
-  {
-    id: "terminal",
-    name: "Command Line",
-    description: "Advanced system tools",
-    icon: <Terminal className="h-4 w-4" />,
-    action: () => {
-      alert('Command Line Interface would open here');
-    },
-    category: 'system',
-  },
-  {
-    id: "kanban",
-    name: "Kanban Board",
-    description: "Visual task management",
-    icon: <Trello className="h-4 w-4" />,
-    action: () => {
-      alert('Kanban Board would open here');
-    },
-    category: 'task',
-  },
-  {
-    id: "quick-note",
-    name: "Quick Note",
-    description: "Jot down a quick note",
-    icon: <Edit className="h-4 w-4" />,
-    action: () => {
-      alert('Quick Note feature would open here');
-    },
-    category: 'note',
-  }
-];
-
-// Default recent items
-const defaultRecentItems: RecentItem[] = [
-  {
-    id: "recent-dashboard",
-    name: "Dashboard",
-    type: "dashboard",
-    icon: <Home className="h-4 w-4" />,
-    path: "/",
-    lastAccessed: new Date().toISOString(),
-  },
-  {
-    id: "recent-tasks",
-    name: "Tasks",
-    type: "task",
-    icon: <CheckSquare className="h-4 w-4" />,
-    path: "/tasks",
-    lastAccessed: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-  },
-  {
-    id: "recent-focus",
-    name: "Focus Mode",
-    type: "dashboard",
-    icon: <Focus className="h-4 w-4" />,
-    path: "/focus",
-    lastAccessed: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-  },
-];
-
-// Default workflows
-const defaultWorkflows: Workflow[] = [
-  {
-    id: "morning-routine",
-    name: "Morning Routine",
-    description: "Start your day right with this workflow",
-    pinnedToHome: true,
-    steps: [
-      {
-        id: "check-calendar",
-        description: "Check today's calendar",
-        path: "/calendar",
-        completed: false,
-      },
-      {
-        id: "review-tasks",
-        description: "Review pending tasks",
-        path: "/tasks",
-        completed: false,
-      },
-      {
-        id: "start-focus",
-        description: "Start focus session",
-        path: "/focus",
-        completed: false,
-      }
-    ]
-  }
-];
