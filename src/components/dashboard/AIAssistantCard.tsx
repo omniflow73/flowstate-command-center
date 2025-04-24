@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,7 @@ export default function AIAssistantCard() {
     if (!inputValue.trim()) return;
 
     const userMessage = {
-      role: "user",
+      role: "user" as const,
       content: inputValue.trim(),
     };
     
@@ -101,7 +102,7 @@ export default function AIAssistantCard() {
       const response = await generateAIResponse(userMessage.content);
       
       setMessages(prev => [...prev, {
-        role: "assistant",
+        role: "assistant" as const,
         content: response,
       }]);
     } catch (error) {
@@ -142,7 +143,7 @@ export default function AIAssistantCard() {
     setMessages(prev => [
       ...prev, 
       {
-        role: "assistant",
+        role: "assistant" as const,
         content: `I've switched to ${mode} mode. How can I help you with your ${mode} today?`
       }
     ]);
@@ -156,7 +157,7 @@ export default function AIAssistantCard() {
 
   const clearChat = () => {
     setMessages([{
-      role: "assistant",
+      role: "assistant" as const,
       content: `Chat cleared. I'm ready to help you with your ${currentMode}.`,
     }]);
     toast.success("Chat history cleared");
