@@ -31,8 +31,9 @@ import {
   FileCheck, Folder, Star as StarFilled, GitBranch, GitPullRequest,
   ListChecks, Trello, Boxes, Database, Layout, MoreVertical,
   ChevronRight, Activity, ArrowRightCircle, ExternalLink, BarChart2,
-  Focus, Calculator, Terminal
+  Focus, Calculator, Terminal, Play, Check, X
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 // Define interface for quick action
 interface QuickAction {
@@ -645,7 +646,7 @@ export default function CommandCenterPage() {
                     );
                   })}
                 </div>
-              </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
           
