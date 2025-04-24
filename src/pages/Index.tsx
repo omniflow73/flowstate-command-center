@@ -11,6 +11,8 @@ import PomodoroCard from "@/components/dashboard/PomodoroCard";
 import HabitTrackerCard from "@/components/dashboard/HabitTrackerCard";
 import AIAssistantCard from "@/components/dashboard/AIAssistantCard";
 import ProjectsCard from "@/components/dashboard/ProjectsCard";
+import TimeBlockingCard from "@/components/dashboard/TimeBlockingCard";
+import NotesCard from "@/components/dashboard/NotesCard";
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -57,12 +59,12 @@ const Index = () => {
               {/* First column */}
               <div className="space-y-6">
                 <TaskCard />
-                <ProjectsCard />
+                <NotesCard />
               </div>
               
               {/* Second column */}
               <div className="space-y-6">
-                <PomodoroCard />
+                <TimeBlockingCard />
                 <HabitTrackerCard />
               </div>
               
