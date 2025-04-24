@@ -1,17 +1,17 @@
 
 import { createRoot } from 'react-dom/client';
-import { StrictMode } from 'react';
+import { StrictMode, Component, type ReactNode } from 'react';
 import App from './App.tsx';
 import './index.css';
 
 // Error boundary for the entire application
-class ErrorBoundary extends StrictMode {
+class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
+  state = { hasError: false };
+  
   static getDerivedStateFromError(error: any) {
     console.error("Application error:", error);
     return { hasError: true };
   }
-  
-  state = { hasError: false };
   
   componentDidCatch(error: any, errorInfo: any) {
     console.error("React error details:", error, errorInfo);
@@ -41,9 +41,11 @@ if (!rootElement) {
     const root = createRoot(rootElement);
     
     root.render(
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
+      <StrictMode>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </StrictMode>
     );
     
     console.log("Application successfully mounted");
