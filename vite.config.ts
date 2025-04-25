@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -5,7 +6,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/flowstate-command-center/', // Correct base URL for GitHub Pages deployment
+  // Either use empty string for development or '/flowstate-command-center/' for production
+  base: '/',  // Changed from '/flowstate-command-center/' to '/'
   server: {
     host: "::", // Make sure this is necessary for your environment
     port: 8080,  // Default development server port

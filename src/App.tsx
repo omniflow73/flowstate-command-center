@@ -28,10 +28,7 @@ const queryClient = new QueryClient({
 });
 
 const getBasePath = () => {
-  const path = window.location.pathname;
-  if (path.includes('/flowstate-command-center')) {
-    return '/flowstate-command-center';
-  }
+  // Simplify this logic to avoid routing issues
   return '';
 };
 
