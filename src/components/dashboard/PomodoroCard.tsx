@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PomodoroCard() {
   const [timer, setTimer] = useState(25 * 60); // 25 minutes in seconds
   const [isActive, setIsActive] = useState(false);
   const [progress, setProgress] = useState(100);
+  const [mode, setMode] = useState<"pomodoro" | "short" | "long">("pomodoro");
   const totalTime = 25 * 60; // 25 minutes in seconds
 
   useEffect(() => {
@@ -57,6 +59,29 @@ export default function PomodoroCard() {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center">
+          <Tabs defaultValue="pomodoro" className="w-full mb-4">
+            <TabsList className="grid grid-cols-3 w-full">
+              <TabsTrigger 
+                value="pomodoro" 
+                onClick={() => setMode("pomodoro")}
+              >
+                Pomodoro
+              </TabsTrigger>
+              <TabsTrigger 
+                value="short" 
+                onClick={() => setMode("short")}
+              >
+                Short Break
+              </TabsTrigger>
+              <TabsTrigger 
+                value="long" 
+                onClick={() => setMode("long")}
+              >
+                Long Break
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
           <div className="text-4xl font-bold my-4">{formatTime(timer)}</div>
           <Progress value={progress} className="w-full mb-4 h-2" />
           <div className="flex gap-2">
