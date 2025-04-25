@@ -42,10 +42,16 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { BackButton } from "@/components/ui/back-button";
 
+interface ProjectTask {
+  id: string;
+  name: string;
+  completed: boolean;
+}
+
 interface Project {
   id: string;
   name: string;
-  tasks: { name: string; completed: boolean }[];
+  tasks: ProjectTask[];
 }
 
 interface Task {
@@ -100,7 +106,6 @@ export default function CommandCenterPage() {
   const [workflowProgress, setWorkflowProgress] = useState(0);
   const navigate = useNavigate();
   
-  // This function will be replaced to use route navigation instead of embedded links
   const handleQuickActionClick = (action: QuickAction) => {
     if (action.route) {
       navigate(action.route);
@@ -109,7 +114,6 @@ export default function CommandCenterPage() {
     }
   };
 
-  // Update the quick actions to use routes instead of links
   const quickActions = [
     {
       id: "focus",
@@ -250,7 +254,6 @@ export default function CommandCenterPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Fix for Quick Actions section to use navigation instead of embedded links */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
         {quickActions.map((action) => (
           <Card 
@@ -415,7 +418,6 @@ export default function CommandCenterPage() {
         </CardContent>
       </Card>
        
-      {/* Remember to close the Tabs component properly */}
       <Card>
         <CardHeader>
           <CardTitle>Workflows</CardTitle>
