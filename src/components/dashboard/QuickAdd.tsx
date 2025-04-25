@@ -22,7 +22,7 @@ export default function QuickAdd() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button className="gap-2 bg-gradient-primary hover:opacity-90">
+        <Button className="gap-2">
           <Plus size={16} />
           <span>Quick Add</span>
         </Button>
